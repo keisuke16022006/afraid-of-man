@@ -616,6 +616,12 @@ function syncViewportHeight() {
   const vh = vv ? vv.height : window.innerHeight;
   app.style.height = vh + "px";
 
+  // iOS Safariはキーボード表示時、position:fixedの要素ごと画面が上にずれて
+  // 見えることがある。visualViewportのoffsetTop（実際に見えている範囲が
+  // レイアウト上どれだけスクロールしているか）だけ逆方向に動かして相殺する。
+  const offsetTop = vv ? vv.offsetTop : 0;
+  app.style.transform = offsetTop ? `translateY(${offsetTop}px)` : "";
+
   const keyboardOpen = vv ? (window.innerHeight - vv.height > 120) : false;
   app.classList.toggle("keyboard-open", keyboardOpen);
 }
@@ -627,10 +633,8 @@ window.addEventListener("resize", syncViewportHeight);
 syncViewportHeight();
 
 /**
- * ホーム画面から開く（スタンドアロン表示）と、通常のSafariタブとは
- * キーボード表示時の挙動が変わり、ページ自体が上にずれることがある。
- * このアプリはそもそもページ全体をスクロールさせる必要がないので、
- * 「動こうとしたら問答無用で(0,0)に戻す」方式で強制的に固定する。
+ * 上記のtransform補正に加えて、実際にページ自体がスクロールしてしまった
+ * 場合の保険として(0,0)に戻す処理も入れておく。
  */
 function pinScroll() {
   if (window.scrollX !== 0 || window.scrollY !== 0) {
@@ -640,13 +644,13 @@ function pinScroll() {
 window.addEventListener("scroll", pinScroll, { passive: true });
 document.addEventListener("focusin", () => {
   pinScroll();
-  setTimeout(pinScroll, 50);
-  setTimeout(pinScroll, 300);
-  setTimeout(pinScroll, 600);
+  setTimeout(() => { syncViewportHeight(); pinScroll(); }, 50);
+  setTimeout(() => { syncViewportHeight(); pinScroll(); }, 300);
+  setTimeout(() => { syncViewportHeight(); pinScroll(); }, 600);
 });
 document.addEventListener("focusout", () => {
-  setTimeout(pinScroll, 50);
-  setTimeout(pinScroll, 300);
+  setTimeout(() => { syncViewportHeight(); pinScroll(); }, 50);
+  setTimeout(() => { syncViewportHeight(); pinScroll(); }, 300);
 });
 
 window.__route = null;
