@@ -59,7 +59,7 @@
   /* キーボード表示中：マスコットを隠し、カードに画面のほぼ全域を使わせて
      入力欄がキーボードに隠れたり、カード内スクロールが必要になったりしないようにする */
   #app.keyboard-open #mascot { display: none; }
-  #app.keyboard-open .card { top: 4%; left: 8%; right: 8%; bottom: 4%; }
+  #app.keyboard-open .card { top: 2%; left: 6%; right: 6%; bottom: 2%; }
   .card-content {
     flex: 1;
     overflow: hidden;
@@ -74,19 +74,21 @@
     font-weight: 600;
     color: var(--black-text);
     text-align: center;
-    margin: 0 0 24px 0;
+    margin: 0 0 16px 0;
+    white-space: nowrap;
   }
   .subtitle {
     font-size: 15px;
     color: var(--gray-text);
     text-align: center;
-    margin: 0 0 8px 0;
+    margin: 0 0 6px 0;
     line-height: 1.4;
+    white-space: nowrap;
   }
   .must-row {
     display: flex;
     align-items: center;
-    margin-bottom: 22px;
+    margin-bottom: 16px;
     cursor: pointer;
     background: none;
     border: none;
@@ -96,9 +98,6 @@
     font: inherit;
   }
   .musts-slot {
-    /* Mustが1〜3個のどれでも、この枠の高さは変えない。
-       枠の中でflexが実際の項目数だけを中央に寄せて配置するので、
-       1個なら中央、2個なら中央寄せのペアになる。 */
     height: 165px;
     display: flex;
     flex-direction: column;
@@ -133,7 +132,7 @@
     font-size: 15px;
     text-align: center;
     cursor: pointer;
-    margin-top: 8px;
+    margin-top: 6px;
     width: 100%;
     font-family: inherit;
   }
@@ -142,16 +141,18 @@
     text-align: center;
     font-size: 13px;
     color: var(--gray-text);
-    margin-top: 16px;
+    margin-top: 10px;
+    white-space: nowrap;
   }
   .reward-reveal {
     text-align: center;
     font-size: 15px;
     color: var(--blue-checked);
     margin-top: 4px;
+    white-space: nowrap;
   }
   .link-button {
-    margin-top: 20px;
+    margin-top: 14px;
     text-align: center;
     background: none;
     border: none;
@@ -160,6 +161,7 @@
     cursor: pointer;
     font-family: inherit;
     width: 100%;
+    white-space: nowrap;
   }
   .text-input {
     width: 100%;
@@ -168,29 +170,29 @@
     padding: 12px;
     font-size: 14px;
     color: var(--black-text);
-    margin-bottom: 20px;
+    margin-bottom: 14px;
     font-family: inherit;
   }
   .must-input-row {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 18px;
+    margin-bottom: 12px;
   }
   .must-input-index { font-size: 14px; color: var(--gray-text); width: 14px; }
   .must-input {
     flex: 1;
     border: none;
     border-bottom: 1px solid #DDDDDD;
-    padding: 6px 2px;
+    padding: 5px 2px;
     font-size: 14px;
     color: var(--black-text);
     font-family: inherit;
     background: transparent;
   }
   .must-input:focus { outline: none; border-bottom-color: var(--blue-checked); }
-  .reward-note { font-size: 12px; color: var(--blue-checked); text-align: center; margin-bottom: 24px; }
-  .max-note { text-align: center; font-size: 11px; color: #B0B0B0; margin-top: 10px; }
+  .reward-note { font-size: 12px; color: var(--blue-checked); text-align: center; margin-bottom: 16px; white-space: nowrap; }
+  .max-note { text-align: center; font-size: 11px; color: #B0B0B0; margin-top: 6px; white-space: nowrap; }
   .screen { display: none; }
   .screen.active { display: flex; flex-direction: column; height: 100%; }
 
@@ -218,18 +220,20 @@
     font-weight: 700;
     color: var(--black-text);
     margin: 0 0 10px 0;
+    white-space: nowrap;
   }
   .toast-body {
     font-size: 14px;
     color: var(--gray-text);
     margin: 0;
+    white-space: nowrap;
   }
 
   /* 明日の契約（保管中）読み取り専用ビュー */
   .must-row-static {
     display: flex;
     align-items: center;
-    margin-bottom: 22px;
+    margin-bottom: 16px;
     width: 100%;
   }
   .stored-note {
@@ -237,6 +241,7 @@
     font-size: 15px;
     color: var(--black-text);
     margin-top: 12px;
+    white-space: nowrap;
   }
   .back-link-spaced {
     margin-top: 48px;
@@ -564,6 +569,33 @@ function escapeHtml(str) {
   div.textContent = str;
   return div.innerHTML;
 }
+
+/**
+ * 「基本、一文は一行で収まるようにする」ための仕組み。
+ * white-space:nowrapを付けたテキストが横幅からはみ出していたら、
+ * 収まるまでフォントサイズを1pxずつ縮める。
+ */
+function fitOneLine(el, minSize = 10) {
+  if (!el) return;
+  el.style.fontSize = "";
+  let size = parseFloat(getComputedStyle(el).fontSize);
+  let guard = 0;
+  while (el.scrollWidth > el.clientWidth + 1 && size > minSize && guard < 40) {
+    size -= 1;
+    el.style.fontSize = size + "px";
+    guard++;
+  }
+}
+function fitAllOneLiners() {
+  const root = document.getElementById("cardContent");
+  root
+    .querySelectorAll(".title, .subtitle, .reward-flat, .reward-reveal, .stored-note, .reward-note, .link-button, .toast-title, .toast-body, .max-note")
+    .forEach((el) => fitOneLine(el));
+}
+new MutationObserver(fitAllOneLiners).observe(document.getElementById("cardContent"), {
+  childList: true,
+  subtree: true,
+});
 
 /**
  * iPhone Safariはソフトキーボード表示時にウィンドウの「見えている範囲」だけが
