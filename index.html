@@ -54,10 +54,15 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    transition: top 0.15s ease, bottom 0.15s ease;
   }
+  /* キーボード表示中：マスコットを隠し、カードに画面のほぼ全域を使わせて
+     入力欄がキーボードに隠れたり、カード内スクロールが必要になったりしないようにする */
+  #app.keyboard-open #mascot { display: none; }
+  #app.keyboard-open .card { top: 4%; left: 8%; right: 8%; bottom: 4%; }
   .card-content {
     flex: 1;
-    overflow-y: auto;
+    overflow: hidden;
     padding: 20px;
     padding-bottom: 24px;
     display: flex;
@@ -559,6 +564,30 @@ function escapeHtml(str) {
   div.textContent = str;
   return div.innerHTML;
 }
+
+/**
+ * iPhone Safariはソフトキーボード表示時にウィンドウの「見えている範囲」だけが
+ * 縮む（100vh/100dvhはそれに追従しないことがある）。これがキーボード表示時に
+ * ページごとスクロールしたように見える原因だったため、visualViewportの高さに
+ * #appの高さを毎回同期させる。あわせて、キーボードで縦が狭くなっている間は
+ * マスコットを隠してカードを画面ほぼ全域に広げ、カード内スクロールも起きない
+ * だけの余白を確保する。
+ */
+function syncViewportHeight() {
+  const app = document.getElementById("app");
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  app.style.height = vh + "px";
+  const keyboardOpen = window.visualViewport
+    ? (window.innerHeight - window.visualViewport.height > 120)
+    : false;
+  app.classList.toggle("keyboard-open", keyboardOpen);
+}
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", syncViewportHeight);
+  window.visualViewport.addEventListener("scroll", syncViewportHeight);
+}
+window.addEventListener("resize", syncViewportHeight);
+syncViewportHeight();
 
 window.__route = null;
 window.__showJudgment = false;
