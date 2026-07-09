@@ -171,12 +171,15 @@
   .screen { display: none; }
   .screen.active { display: flex; flex-direction: column; height: 100%; }
 
-  /* 契約成立トースト（保存直後、フォームを薄暗くして上に重ねる） */
-  .form-dimmed {
-    opacity: 0.35;
+  /* 契約成立トースト（保存直後、フォームをグレーアウトして上に重ねる） */
+  .card.dimmed { background: #E3E6E8; transition: background 0.2s ease; }
+  .form-dimmed, .form-dimmed * {
+    color: #9AA0A4 !important;
     pointer-events: none;
-    filter: grayscale(40%);
   }
+  .form-dimmed .checkbox { background: #C7CBCE !important; }
+  .form-dimmed .checkbox.checked { background: #AACBE6 !important; }
+  .form-dimmed .primary-button { background: #C2CBCF !important; color: #fff !important; }
   .toast-overlay {
     position: absolute;
     inset: 0;
@@ -212,11 +215,8 @@
     color: var(--black-text);
     margin-top: 12px;
   }
-  .stored-caption {
-    text-align: center;
-    font-size: 11px;
-    color: #B0B0B0;
-    margin-top: 4px;
+  .back-link-spaced {
+    margin-top: 48px;
   }
 </style>
 </head>
@@ -343,7 +343,7 @@ const COPY = {
   notAchieved: { title: "契約はまだ完了していません。", body: "また達成したら来てください。" },
   noContractToday: { title: "今日の契約はありません。", body: "明日の契約を結んでください。" },
   contractEstablished: { title: "契約成立", body: "明日の自分を信じましょう。" },
-  contractStored: { status: "契約保管中", caption: "明日の夜になるまで、変更できません。" },
+  contractStored: { status: "契約保管中" },
   rewardPrompt: { title: "明日のご褒美", body: "契約を守ったら、何をしますか？" },
   mustPrompt: { title: "明日の契約", body: "そのために、何をやり遂げますか？" },
 };
@@ -353,6 +353,7 @@ const root = document.getElementById("cardContent");
 let pendingReward = "";
 
 function render() {
+  document.querySelector(".card").classList.remove("dimmed");
   const view = getTodayContractView();
   if (window.__route === "reward") return renderRewardInput();
   if (window.__route === "musts") return renderMustInput();
@@ -475,11 +476,7 @@ function renderMustInput() {
       if (e.key !== "Enter") return;
       e.preventDefault();
       const next = list[idx + 1];
-      if (next) {
-        next.focus();
-      } else {
-        document.getElementById("saveButton").click();
-      }
+      if (next) next.focus();
     });
   });
   document.getElementById("saveButton").onclick = () => {
@@ -497,6 +494,7 @@ function renderMustInput() {
 function showEstablishedToast() {
   const form = document.getElementById("mustForm");
   form.classList.add("form-dimmed");
+  document.querySelector(".card").classList.add("dimmed");
   document.getElementById("saveButton").disabled = true;
 
   const toast = document.createElement("div");
@@ -533,8 +531,7 @@ function renderPendingView(view) {
     <p class="reward-note">ご褒美：${escapeHtml(view.reward)}</p>
     ${rows}
     <p class="stored-note">${COPY.contractStored.status}</p>
-    <p class="stored-caption">${COPY.contractStored.caption}</p>
-    <button class="link-button" id="backToday2">今日の契約に戻る</button>
+    <button class="link-button back-link-spaced" id="backToday2">今日の契約に戻る</button>
   `;
   document.getElementById("backToday2").onclick = () => { window.__route = null; render(); };
 }
