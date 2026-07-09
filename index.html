@@ -21,6 +21,8 @@
     overflow: hidden;
     overscroll-behavior: none;
     position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
   }
   #app {
@@ -607,11 +609,17 @@ new MutationObserver(fitAllOneLiners).observe(document.getElementById("cardConte
  */
 function syncViewportHeight() {
   const app = document.getElementById("app");
-  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const vv = window.visualViewport;
+  const vh = vv ? vv.height : window.innerHeight;
   app.style.height = vh + "px";
-  const keyboardOpen = window.visualViewport
-    ? (window.innerHeight - window.visualViewport.height > 120)
-    : false;
+
+  // iOS Safariはキーボード表示時、position:fixedの要素ごと画面が上にずれて
+  // 見えることがある。visualViewportのoffsetTop（実際に見えている範囲が
+  // レイアウト上どれだけスクロールしているか）だけ逆方向に動かして相殺する。
+  const offsetTop = vv ? vv.offsetTop : 0;
+  app.style.transform = offsetTop ? `translateY(${offsetTop}px)` : "";
+
+  const keyboardOpen = vv ? (window.innerHeight - vv.height > 120) : false;
   app.classList.toggle("keyboard-open", keyboardOpen);
 }
 if (window.visualViewport) {
@@ -619,6 +627,7 @@ if (window.visualViewport) {
   window.visualViewport.addEventListener("scroll", syncViewportHeight);
 }
 window.addEventListener("resize", syncViewportHeight);
+window.addEventListener("scroll", syncViewportHeight);
 syncViewportHeight();
 
 window.__route = null;
